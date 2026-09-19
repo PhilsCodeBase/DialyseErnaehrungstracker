@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NierenKompass — Ernährungsbegleiter</title>
+<meta name="description" content="Ernährungsbegleiter für Nieren- und Dialysepatienten: Grenzwerte, Lebensmittel-Datenbank, Fotoerkennung.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NierenKompass">
+<meta name="theme-color" content="#3D6657">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EEF2ED; --bg-deep: #E3E9E2; --card: #FFFFFF; --ink: #1E2A22; --ink-soft: #57685D;
+    --accent: #3D6657; --accent-dark: #2A4A3E; --accent-soft: #DCE7DD;
+    --clay: #B8674A; --clay-soft: #F3E1D8; --warn: #A6433B; --warn-soft: #F5E1DE;
+    --amber: #B8863C; --amber-soft: #F4EAD6; --line: #D8E0D5; --radius: 18px; --radius-sm: 10px;
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --bg:#141B16; --bg-deep:#0F1512; --card:#1B2420; --ink:#EAF0E9; --ink-soft:#9FB0A4;
+      --accent:#7FB39A; --accent-dark:#A7D3BB; --accent-soft:#24352C;
+      --clay:#D99A7C; --clay-soft:#33241D; --warn:#E28A82; --warn-soft:#3A211F;
+      --amber:#E3BE79; --amber-soft:#362C1B; --line:#2A362F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#141B16; --bg-deep:#0F1512; --card:#1B2420; --ink:#EAF0E9; --ink-soft:#9FB0A4;
+    --accent:#7FB39A; --accent-dark:#A7D3BB; --accent-soft:#24352C;
+    --clay:#D99A7C; --clay-soft:#33241D; --warn:#E28A82; --warn-soft:#3A211F;
+    --amber:#E3BE79; --amber-soft:#362C1B; --line:#2A362F;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg); color:var(--ink); font-family:'IBM Plex Sans', system-ui, sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Fraunces', Georgia, serif; margin:0; letter-spacing:-0.01em;}
+  .wrap{max-width:620px; margin:0 auto; padding:20px 16px 60px;}
+  header.top{display:flex; align-items:center; justify-content:space-between; padding:6px 2px 20px;}
+  .brand{display:flex; align-items:center; gap:10px;}
+  .brand-mark{width:38px; height:38px; border-radius:11px; background:linear-gradient(155deg, var(--accent), var(--accent-dark)); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .brand-mark svg{width:20px; height:20px;}
+  .brand h1{font-size:1.28rem; font-weight:600; color:var(--ink);}
+  .brand .tag{font-size:0.72rem; color:var(--ink-soft); margin-top:1px;}
+  .icon-btn{background:var(--card); border:1px solid var(--line); border-radius:10px; width:38px; height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--ink-soft);}
+  .icon-btn:hover{color:var(--accent); border-color:var(--accent);}
+
+  .sheet-backdrop{position:fixed; inset:0; background:rgba(15,21,18,0.5); display:flex; align-items:flex-end; justify-content:center; z-index:50; animation:fadeIn 0.25s ease;}
+  @media (min-width:640px){ .sheet-backdrop{ align-items:center; } }
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+  .sheet{background:var(--card); width:100%; max-width:520px; border-radius:22px 22px 0 0; padding:26px 22px 28px; max-height:90vh; overflow-y:auto; animation:slideUp 0.3s cubic-bezier(.2,.9,.3,1);}
+  @media (min-width:640px){ .sheet{border-radius:22px; margin:20px;} }
+  @keyframes slideUp{ from{transform:translateY(30px); opacity:0;} to{transform:translateY(0); opacity:1;} }
+  .sheet h2{font-size:1.4rem; margin-bottom:4px;}
+  .sheet p.sub{color:var(--ink-soft); font-size:0.9rem; margin:0 0 20px;}
+  .stage-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:18px;}
+  .stage-opt{border:1.5px solid var(--line); border-radius:var(--radius-sm); padding:12px 10px; cursor:pointer; background:var(--bg); text-align:left; transition:.15s;}
+  .stage-opt strong{display:block; font-size:0.95rem;}
+  .stage-opt span{display:block; font-size:0.72rem; color:var(--ink-soft); margin-top:2px;}
+  .stage-opt.selected{border-color:var(--accent); background:var(--accent-soft);}
+  label.field-label{display:block; font-size:0.78rem; font-weight:600; color:var(--ink-soft); margin:16px 0 6px;}
+  input[type=number], input[type=text], input[type=search]{width:100%; padding:11px 12px; border-radius:var(--radius-sm); border:1.5px solid var(--line); background:var(--bg); color:var(--ink); font-size:0.95rem; font-family:inherit;}
+  input:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent);}
+  .btn-primary{width:100%; padding:13px; border-radius:12px; border:none; margin-top:22px; background:var(--accent); color:#fff; font-weight:600; font-size:0.98rem; cursor:pointer; font-family:inherit;}
+  .btn-primary:disabled{opacity:0.4; cursor:not-allowed;}
+  .btn-primary:hover:not(:disabled){background:var(--accent-dark);}
+  .btn-secondary{width:100%; padding:12px; border-radius:12px; border:1.5px dashed var(--accent); margin-top:10px; background:var(--accent-soft); color:var(--accent-dark); font-weight:600; font-size:0.9rem; cursor:pointer; font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px;}
+  .btn-secondary:hover{background:var(--accent); color:#fff;}
+  .btn-secondary:disabled{opacity:0.4; cursor:not-allowed;}
+
+  .profile-strip{display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px;}
+  .profile-strip .lbl{font-size:0.72rem; color:var(--ink-soft);}
+  .profile-strip .val{font-family:'Fraunces', serif; font-size:1.05rem; font-weight:600;}
+  .edit-link{font-size:0.78rem; color:var(--accent); cursor:pointer; font-weight:600; background:none; border:none; font-family:inherit;}
+
+  .nutrient-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin-bottom:12px;}
+  .nutrient-row{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px;}
+  .nutrient-name{font-size:0.92rem; font-weight:600;}
+  .nutrient-vals{font-family:'IBM Plex Mono', monospace; font-size:0.82rem; color:var(--ink-soft);}
+  .nutrient-vals b{color:var(--ink); font-weight:600;}
+  .bar-track{height:9px; border-radius:6px; background:var(--bg-deep); overflow:hidden;}
+  .bar-fill{height:100%; border-radius:6px; transition:width 0.4s ease, background 0.3s;}
+  .bar-fill.ok{background:var(--accent);}
+  .bar-fill.warn{background:var(--amber);}
+  .bar-fill.over{background:var(--warn);}
+  .nutrient-note{font-size:0.74rem; margin-top:6px; color:var(--ink-soft);}
+  .nutrient-note.over{color:var(--warn);}
+
+  .section-title{font-size:1.02rem; font-weight:600; margin:26px 0 10px; display:flex; align-items:center; justify-content:space-between;}
+  .section-title .add-btn{background:var(--accent); color:#fff; border:none; border-radius:9px; padding:7px 13px; font-size:0.82rem; font-weight:600; cursor:pointer; font-family:inherit;}
+
+  .fluid-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin-bottom:16px;}
+  .fluid-quick{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+  .chip{border:1.5px solid var(--line); background:var(--bg); border-radius:20px; padding:7px 13px; font-size:0.82rem; cursor:pointer; color:var(--ink); font-family:inherit;}
+  .chip:hover{border-color:var(--accent); color:var(--accent);}
+
+  .meal-item{display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-sm); padding:11px 13px; margin-bottom:8px;}
+  .meal-item .meal-icon{width:34px; height:34px; border-radius:9px; background:var(--accent-soft); color:var(--accent-dark); display:flex; align-items:center; justify-content:center; font-size:1.05rem; flex-shrink:0;}
+  .meal-item .meal-info{flex:1; min-width:0;}
+  .meal-item .meal-name{font-size:0.9rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .meal-item .meal-detail{font-size:0.73rem; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; margin-top:1px;}
+  .meal-item .del{background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:1.1rem; padding:4px;}
+  .meal-item .del:hover{color:var(--warn);}
+  .empty-state{text-align:center; padding:30px 16px; color:var(--ink-soft); font-size:0.86rem; background:var(--card); border:1px dashed var(--line); border-radius:var(--radius);}
+
+  .modal-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:2px;}
+  .close-x{background:none; border:none; font-size:1.3rem; color:var(--ink-soft); cursor:pointer; line-height:1; padding:4px;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+
+  /* Food search */
+  .food-results{max-height:230px; overflow-y:auto; border:1.5px solid var(--line); border-radius:var(--radius-sm); margin-top:8px;}
+  .food-row{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; cursor:pointer; border-bottom:1px solid var(--line);}
+  .food-row:last-child{border-bottom:none;}
+  .food-row:hover{background:var(--bg);}
+  .food-row .fname{font-size:0.86rem; font-weight:500;}
+  .food-row .fvals{font-size:0.68rem; color:var(--ink-soft); font-family:'IBM Plex Mono', monospace; margin-top:1px;}
+  .food-row .fcat{font-size:0.65rem; color:var(--ink-soft); background:var(--bg-deep); border-radius:6px; padding:2px 6px; flex-shrink:0;}
+  .food-empty{padding:16px; text-align:center; font-size:0.82rem; color:var(--ink-soft);}
+
+  .selected-food-card{background:var(--accent-soft); border:1.5px solid var(--accent); border-radius:var(--radius-sm); padding:12px 14px; margin-top:10px;}
+  .selected-food-card .sf-head{display:flex; align-items:center; justify-content:space-between;}
+  .selected-food-card .sf-name{font-weight:600; font-size:0.92rem;}
+  .selected-food-card .sf-clear{background:none; border:none; color:var(--accent-dark); font-size:0.75rem; cursor:pointer; font-weight:600; font-family:inherit;}
+  .selected-food-card .sf-gram-row{display:flex; align-items:center; gap:8px; margin-top:10px;}
+  .selected-food-card .sf-gram-row input{width:90px;}
+  .selected-food-card .sf-computed{margin-top:10px; font-family:'IBM Plex Mono', monospace; font-size:0.78rem; color:var(--accent-dark); line-height:1.6;}
+
+  .or-divider{display:flex; align-items:center; gap:10px; margin:18px 0 6px; color:var(--ink-soft); font-size:0.75rem;}
+  .or-divider::before, .or-divider::after{content:""; flex:1; height:1px; background:var(--line);}
+
+  /* Photo */
+  .photo-status{display:flex; align-items:center; gap:10px; margin-top:10px; padding:10px 12px; border-radius:var(--radius-sm); background:var(--clay-soft); font-size:0.82rem; color:var(--ink);}
+  .spinner{width:16px; height:16px; border-radius:50%; border:2px solid var(--clay); border-top-color:transparent; animation:spin 0.7s linear infinite; flex-shrink:0;}
+  @keyframes spin{ to{transform:rotate(360deg);} }
+  .photo-status.error{background:var(--warn-soft); color:var(--warn);}
+  .photo-status.success{background:var(--accent-soft); color:var(--accent-dark);}
+  #photoInput{display:none;}
+
+  .disclaimer{font-size:0.72rem; color:var(--ink-soft); line-height:1.5; margin-top:28px; padding-top:16px; border-top:1px solid var(--line);}
+  ::-webkit-scrollbar{width:0; height:0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2C8 2 5 6 5 11c0 5.5 3.5 9.5 6.4 10.7.4.15.8.15 1.2 0C15.5 20.5 19 16.5 19 11c0-5-3-9-7-9z" fill="#fff" opacity="0.95"/></svg></div>
+      <div><h1>NierenKompass</h1><div class="tag">dein Ernährungsbegleiter</div></div>
+    </div>
+    <button class="icon-btn" id="settingsBtn" title="Profil bearbeiten">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    </button>
+  </header>
+
+  <div id="dashboard" style="display:none;">
+    <div class="profile-strip">
+      <div><div class="lbl">Dein Profil</div><div class="val" id="profileLabel">—</div></div>
+      <button class="edit-link" id="editProfileBtn">Ändern</button>
+    </div>
+
+    <div id="nutrientCards"></div>
+
+    <div class="fluid-card">
+      <div class="nutrient-row"><span class="nutrient-name">💧 Flüssigkeit</span><span class="nutrient-vals" id="fluidVals"></span></div>
+      <div class="bar-track"><div class="bar-fill" id="fluidBar"></div></div>
+      <div class="fluid-quick">
+        <button class="chip" data-ml="200">+ Glas Wasser (200ml)</button>
+        <button class="chip" data-ml="150">+ Kaffee/Tee (150ml)</button>
+        <button class="chip" data-ml="250">+ Tasse Suppe (250ml)</button>
+        <button class="chip" data-ml="330">+ Getränk (330ml)</button>
+      </div>
+    </div>
+
+    <div class="section-title">Heutige Mahlzeiten<button class="add-btn" id="addMealBtn">+ Mahlzeit</button></div>
+    <div id="mealList"></div>
+  </div>
+</div>
+
+<!-- Onboarding / Profil Sheet -->
+<div class="sheet-backdrop" id="onboardBackdrop" style="display:none;">
+  <div class="sheet">
+    <div class="modal-header"><h2 id="onboardTitle">Willkommen</h2><button class="close-x" id="closeOnboard" style="visibility:hidden;">✕</button></div>
+    <p class="sub">Erzähl uns von deiner Nierengesundheit, damit wir deine täglichen Grenzwerte für Natrium, Kalium, Phosphat und Protein berechnen können.</p>
+    <label class="field-label">CKD-Stadium / Situation</label>
+    <div class="stage-grid" id="stageGrid"></div>
+    <label class="field-label">Körpergewicht (kg) — für die Proteinberechnung</label>
+    <input type="number" id="weightInput" placeholder="z. B. 72" min="30" max="200">
+    <button class="btn-primary" id="saveProfileBtn" disabled>Grenzwerte berechnen</button>
+  </div>
+</div>
+
+<!-- Meal Add Sheet -->
+<div class="sheet-backdrop" id="mealBackdrop" style="display:none;">
+  <div class="sheet">
+    <div class="modal-header"><h2>Mahlzeit hinzufügen</h2><button class="close-x" id="closeMeal">✕</button></div>
+    <p class="sub">Suche ein Lebensmittel aus unserer Datenbank oder fotografiere dein Essen, ein Etikett oder ein Rezept.</p>
+
+    <button class="btn-secondary" id="photoBtn" style="display:none;">📷 Foto hochladen (Essen / Etikett / Rezept)</button>
+    <input type="file" id="photoInput" accept="image/*">
+    <div id="photoStatus" style="display:none;"></div>
+    <div id="photoUnavailableNote" style="display:none; font-size:0.76rem; color:var(--ink-soft); margin-top:6px; padding:8px 10px; background:var(--bg); border-radius:var(--radius-sm);">
+      📷 Foto-Erkennung ist hier nicht aktiv (nur verfügbar, solange die App über den claude.ai-Link läuft). Werte bitte über die Suche oder manuell eintragen.
+    </div>
+
+    <div class="or-divider">oder Lebensmittel suchen</div>
+    <input type="search" id="foodSearch" placeholder="z. B. Lachs, Banane, Käse …">
+    <div class="food-results" id="foodResults"></div>
+
+    <div class="selected-food-card" id="selectedFoodCard" style="display:none;">
+      <div class="sf-head"><span class="sf-name" id="sfName"></span><button class="sf-clear" id="sfClear">Ändern</button></div>
+      <div class="sf-gram-row">
+        <input type="number" id="sfGrams" value="100" min="1"> <span>Gramm</span>
+      </div>
+      <div class="sf-computed" id="sfComputed"></div>
+    </div>
+
+    <label class="field-label">Bezeichnung</label>
+    <input type="text" id="mealName" placeholder="z. B. Hähnchenbrust mit Reis">
+    <div class="grid2">
+      <div><label class="field-label">Natrium (mg)</label><input type="number" id="mealNa" min="0"></div>
+      <div><label class="field-label">Kalium (mg)</label><input type="number" id="mealK" min="0"></div>
+    </div>
+    <div class="grid2">
+      <div><label class="field-label">Phosphat (mg)</label><input type="number" id="mealP" min="0"></div>
+      <div><label class="field-label">Protein (g)</label><input type="number" id="mealProt" min="0"></div>
+    </div>
+    <label class="field-label">Flüssigkeit in dieser Mahlzeit (ml, optional)</label>
+    <input type="number" id="mealFluid" min="0" placeholder="0">
+
+    <button class="btn-primary" id="saveMealBtn">Zum Tag hinzufügen</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- Stages (fixed values as specified for dialysis) ----------
+  var STAGES = [
+    {id:"1-2", label:"Stadium 1–2", sub:"leichte Einschränkung", na:2300, k:4700, p:1000, protPerKg:0.8, fluid:2500},
+    {id:"3a",  label:"Stadium 3a",  sub:"mäßige Funktionsminderung", na:2000, k:3000, p:1000, protPerKg:0.8, fluid:2200},
+    {id:"3b",  label:"Stadium 3b",  sub:"mäßig–stark eingeschränkt", na:2000, k:2500, p:900,  protPerKg:0.7, fluid:2200},
+    {id:"4",   label:"Stadium 4",   sub:"stark eingeschränkt", na:2000, k:2000, p:800,  protPerKg:0.6, fluid:2000},
+    {id:"5",   label:"Stadium 5",   sub:"ohne Dialyse", na:1500, k:2000, p:800,  protPerKg:0.6, fluid:1500},
+    {id:"dialysis", label:"Dialyse", sub:"Hämo- / Peritonealdialyse", na:2000, k:2000, p:800, protPerKg:1.0, fluid:1000},
+    {id:"stones", label:"Nierensteine", sub:"steinvorbeugende Diät", na:2300, k:3500, p:1000, protPerKg:0.8, fluid:2800},
+    {id:"transplant", label:"Transplantiert", sub:"nach Nierentransplantation", na:2000, k:3500, p:1000, protPerKg:0.9, fluid:2500}
+  ];
+
+  // ---------- Food database: values per 100g, {name, cat, na, k, p, prot} ----------
+  var FOOD_DB = [
+    // Milch & Milcherzeugnisse
+    {n:"Buttermilch", c:"Milch", na:57, k:147, p:90, prot:3.5},
+    {n:"Joghurt, fettarm (1,5-1,8% Fett)", c:"Milch", na:45, k:149, p:87, prot:3.6},
+    {n:"Joghurt, mind. 3,5% Fett", c:"Milch", na:48, k:157, p:92, prot:3.9},
+    {n:"Joghurt, mager (max. 0,3% Fett)", c:"Milch", na:57, k:187, p:109, prot:4.4},
+    {n:"Kefir", c:"Milch", na:46, k:160, p:90, prot:3.3},
+    {n:"Kondensmilch, mind. 7,5% Fett", c:"Milch", na:98, k:322, p:189, prot:6.5},
+    {n:"Magermilch", c:"Milch", na:53, k:150, p:97, prot:3.5},
+    {n:"Milch, fettarm (1,5-1,8% Fett)", c:"Milch", na:47, k:155, p:91, prot:3.4},
+    {n:"Molke, süß", c:"Milch", na:45, k:129, p:43, prot:0.8},
+    {n:"Sahne, Kaffeesahne (mind. 10% Fett)", c:"Milch", na:40, k:132, p:85, prot:3.1},
+    {n:"Sahne, sauer (Sauerrahm)", c:"Milch", na:53, k:144, p:80, prot:2.8},
+    {n:"Schlagsahne (mind. 30% Fett)", c:"Milch", na:34, k:112, p:63, prot:2.4},
+    {n:"Schafmilch", c:"Milch", na:30, k:182, p:115, prot:5.3},
+    {n:"Trockenbuttermilch (Pulver)", c:"Milch", na:354, k:1300, p:915, prot:33.4},
+    {n:"Trockenmagermilch (Pulver)", c:"Milch", na:557, k:1580, p:1020, prot:35.0},
+    {n:"Trockenmolke (Pulver)", c:"Milch", na:1290, k:1860, p:576, prot:12.0},
+    {n:"Trockenvollmilch (Pulver)", c:"Milch", na:371, k:1160, p:714, prot:25.2},
+    {n:"Vollmilch (mind. 3,5% Fett)", c:"Milch", na:48, k:157, p:92, prot:3.3},
+    {n:"Ziegenmilch", c:"Milch", na:42, k:181, p:109, prot:3.7},
+    // Eier
+    {n:"Hühnerei (ganz)", c:"Ei", na:144, k:147, p:216, prot:12.9},
+    {n:"Hühnereigelb (Eigelb)", c:"Ei", na:51, k:138, p:590, prot:16.1},
+    {n:"Hühnereiweiß (Eiklar)", c:"Ei", na:170, k:154, p:21, prot:11.1},
+    // Käse
+    {n:"Brie, Rahmbrie (50% Fett i.Tr.)", c:"Käse", na:1170, k:152, p:188, prot:22.6},
+    {n:"Butterkäse (50% Fett i.Tr.)", c:"Käse", na:865, k:78, p:417, prot:21.1},
+    {n:"Camembert (50% Fett i.Tr.)", c:"Käse", na:900, k:96, p:390, prot:20.5},
+    {n:"Chester, Cheddar (50% Fett i.Tr.)", c:"Käse", na:675, k:102, p:489, prot:25.4},
+    {n:"Edamer (40% Fett i.Tr.)", c:"Käse", na:900, k:105, p:498, prot:26.1},
+    {n:"Edelpilzkäse (50% Fett i.Tr.)", c:"Käse", na:1400, k:128, p:362, prot:21.1},
+    {n:"Emmentaler (45% Fett i.Tr.)", c:"Käse", na:450, k:107, p:636, prot:28.7},
+    {n:"Frischkäse, Doppelrahm (60-85% Fett i.Tr.)", c:"Käse", na:375, k:95, p:137, prot:11.3},
+    {n:"Gouda (45% Fett i.Tr.)", c:"Käse", na:869, k:76, p:443, prot:25.5},
+    {n:"Hüttenkäse, Cottage Cheese (20% i.Tr.)", c:"Käse", na:230, k:88, p:150, prot:12.3},
+    {n:"Limburger (20% Fett i.Tr.)", c:"Käse", na:1280, k:116, p:285, prot:26.4},
+    {n:"Limburger (40% Fett i.Tr.)", c:"Käse", na:1300, k:128, p:256, prot:22.4},
+    {n:"Münsterkäse (45% Fett i.Tr.)", c:"Käse", na:1020, k:134, p:240, prot:21.6},
+    {n:"Münsterkäse (50% Fett i.Tr.)", c:"Käse", na:900, k:134, p:170, prot:20.9},
+    {n:"Parmesan", c:"Käse", na:704, k:130, p:743, prot:35.6},
+    {n:"Romadur (30% Fett i.Tr.)", c:"Käse", na:1230, k:117, p:316, prot:23.7},
+    {n:"Roquefort", c:"Käse", na:1810, k:91, p:392, prot:21.5},
+    {n:"Sauermilchkäse (Harzer, Mainzer u.ä.)", c:"Käse", na:1520, k:106, p:266, prot:30.0},
+    {n:"Schmelzkäse (45% Fett i.Tr.)", c:"Käse", na:1260, k:65, p:944, prot:14.4},
+    {n:"Speisequark (20% Fett i.Tr.)", c:"Käse", na:35, k:87, p:165, prot:12.5},
+    {n:"Tilsiter (45% Fett i.Tr.)", c:"Käse", na:773, k:60, p:522, prot:26.3},
+    // Fette, Öle und Margarine
+    {n:"Butter (Süß-/Sauerrahmbutter)", c:"Fett", na:5, k:16, p:21, prot:0.7},
+    {n:"Distelöl", c:"Fett", na:0, k:1, p:0, prot:0},
+    {n:"Halbfettmargarine", c:"Fett", na:390, k:7, p:8, prot:1.6},
+    {n:"Mayonnaise", c:"Fett", na:481, k:25, p:44, prot:1.5},
+    {n:"Olivenöl", c:"Fett", na:1, k:1, p:1, prot:0},
+    {n:"Rapsöl", c:"Fett", na:1, k:1, p:1, prot:0},
+    {n:"Sonnenblumenöl", c:"Fett", na:1, k:1, p:1, prot:0},
+    // Fleisch und Fleischerzeugnisse
+    {n:"Hackfleisch (Schwein/Rind), frisch", c:"Fleisch", na:55, k:317, p:165, prot:18.9},
+    {n:"Hammelfleisch (Keule, Schlegel)", c:"Fleisch", na:78, k:380, p:213, prot:18.0},
+    {n:"Hammelfleisch (Kotelett)", c:"Fleisch", na:90, k:345, p:138, prot:14.9},
+    {n:"Hammelfleisch (Filet)", c:"Fleisch", na:94, k:289, p:162, prot:20.4},
+    {n:"Kalbfleisch (Filet)", c:"Fleisch", na:95, k:348, p:200, prot:20.6},
+    {n:"Kalbfleisch (Keule, Schlegel)", c:"Fleisch", na:86, k:343, p:198, prot:20.7},
+    {n:"Kalbfleisch (Kotelett)", c:"Fleisch", na:93, k:369, p:195, prot:20.9},
+    {n:"Kalbsherz", c:"Fleisch", na:104, k:265, p:180, prot:15.9},
+    {n:"Kalbsleber", c:"Fleisch", na:87, k:316, p:306, prot:19.2},
+    {n:"Kalbsniere", c:"Fleisch", na:200, k:290, p:260, prot:16.7},
+    {n:"Kaninchenfleisch", c:"Fleisch", na:47, k:382, p:224, prot:20.8},
+    {n:"Kassler", c:"Fleisch", na:958, k:324, p:160, prot:20.9},
+    {n:"Leberpastete", c:"Fleisch", na:738, k:173, p:191, prot:14.2},
+    {n:"Pferdefleisch", c:"Fleisch", na:44, k:332, p:185, prot:20.6},
+    {n:"Rinderherz", c:"Fleisch", na:108, k:286, p:214, prot:16.8},
+    {n:"Rinderleber", c:"Fleisch", na:116, k:292, p:358, prot:19.7},
+    {n:"Rinderniere", c:"Fleisch", na:235, k:245, p:248, prot:16.6},
+    {n:"Rindfleisch (Filet)", c:"Fleisch", na:42, k:338, p:164, prot:21.2},
+    {n:"Rindfleisch (Lende, Roastbeef)", c:"Fleisch", na:55, k:356, p:157, prot:22.5},
+    {n:"Rindfleisch (Rostbraten)", c:"Fleisch", na:53, k:316, p:149, prot:20.6},
+    {n:"Schweinefleisch (Bug/Schulter)", c:"Fleisch", na:74, k:291, p:149, prot:17.6},
+    {n:"Schweinefleisch (Filet)", c:"Fleisch", na:74, k:348, p:173, prot:22.0},
+    {n:"Schweinefleisch (Kotelett)", c:"Fleisch", na:65, k:315, p:150, prot:21.6},
+    {n:"Schweineleber", c:"Fleisch", na:77, k:350, p:362, prot:20.7},
+    {n:"Schweineniere", c:"Fleisch", na:173, k:242, p:260, prot:16.9},
+    {n:"Schweineschinken, geräuchert (Bauchspeck)", c:"Fleisch", na:1400, k:248, p:207, prot:18.0},
+    {n:"Kochschinken", c:"Fleisch", na:965, k:270, p:136, prot:22.5},
+    {n:"Schweinespeck (durchwachsen)", c:"Fleisch", na:1770, k:225, p:108, prot:9.1},
+    // Wurstwaren
+    {n:"Bierschinken", c:"Wurst", na:685, k:337, p:163, prot:18.3},
+    {n:"Bratwurst (grob)", c:"Wurst", na:693, k:174, p:71, prot:16.3},
+    {n:"Cervelatwurst", c:"Wurst", na:1274, k:358, p:186, prot:20.1},
+    {n:"Corned Beef", c:"Wurst", na:833, k:131, p:128, prot:21.7},
+    {n:"Fleischwurst", c:"Wurst", na:829, k:199, p:129, prot:12.1},
+    {n:"Frankfurter Würstchen", c:"Wurst", na:1150, k:154, p:107, prot:12.4},
+    {n:"Frühstücksfleisch", c:"Wurst", na:1060, k:212, p:220, prot:14.7},
+    {n:"Jagdwurst", c:"Wurst", na:738, k:287, p:139, prot:16.8},
+    {n:"Leberwurst", c:"Wurst", na:810, k:143, p:154, prot:15.9},
+    {n:"Mettwurst (Braunschweiger)", c:"Wurst", na:1090, k:213, p:160, prot:13.9},
+    {n:"Salami", c:"Wurst", na:2080, k:224, p:167, prot:21.0},
+    {n:"Weißwurst Münchner Art", c:"Wurst", na:775, k:233, p:132, prot:14.5},
+    {n:"Wiener Würstchen", c:"Wurst", na:941, k:204, p:170, prot:12.4},
+    // Fisch und Fischerzeugnisse
+    {n:"Aal, geräuchert", c:"Fisch", na:500, k:243, p:250, prot:17.9},
+    {n:"Aal", c:"Fisch", na:65, k:217, p:223, prot:15.0},
+    {n:"Barsch (Flussbarsch)", c:"Fisch", na:47, k:330, p:198, prot:18.4},
+    {n:"Bismarckhering (mariniert)", c:"Fisch", na:1090, k:74, p:149, prot:16.5},
+    {n:"Brasse (Brachsen, Blei)", c:"Fisch", na:31, k:478, p:259, prot:16.6},
+    {n:"Brathering", c:"Fisch", na:585, k:184, p:240, prot:16.8},
+    {n:"Bückling", c:"Fisch", na:689, k:343, p:256, prot:21.2},
+    {n:"Flunder", c:"Fisch", na:92, k:332, p:200, prot:16.5},
+    {n:"Forelle (Bach-/Regenbogenforelle)", c:"Fisch", na:63, k:413, p:245, prot:19.5},
+    {n:"Hecht", c:"Fisch", na:75, k:304, p:215, prot:18.4},
+    {n:"Heilbutt (weißer Heilbutt)", c:"Fisch", na:67, k:446, p:202, prot:20.1},
+    {n:"Hering (Ostseehering)", c:"Fisch", na:74, k:370, p:240, prot:18.1},
+    {n:"Hering", c:"Fisch", na:117, k:360, p:250, prot:18.2},
+    {n:"Kabeljau (Dorsch)", c:"Fisch", na:72, k:356, p:184, prot:17.7},
+    {n:"Karpfen", c:"Fisch", na:30, k:387, p:247, prot:18.0},
+    {n:"Katfisch (Steinbeißer)", c:"Fisch", na:105, k:282, p:179, prot:15.8},
+    {n:"Kaviar", c:"Fisch", na:1940, k:164, p:300, prot:26.1},
+    {n:"Köhler (Seelachs)", c:"Fisch", na:81, k:374, p:300, prot:18.3},
+    {n:"Lachs (Salm)", c:"Fisch", na:51, k:371, p:266, prot:19.9},
+    {n:"Makrele, geräuchert", c:"Fisch", na:261, k:275, p:240, prot:20.7},
+    {n:"Meeräsche", c:"Fisch", na:69, k:404, p:217, prot:20.4},
+    {n:"Ölsardine in Öl", c:"Fisch", na:336, k:388, p:430, prot:24.1},
+    {n:"Renke (Maräne, Felchen)", c:"Fisch", na:140, k:383, p:242, prot:17.8},
+    {n:"Rotbarsch (Goldbarsch)", c:"Fisch", na:80, k:308, p:201, prot:18.2},
+    {n:"Salzheringe (Pökelhering)", c:"Fisch", na:5930, k:240, p:341, prot:19.8},
+    {n:"Schellfisch", c:"Fisch", na:116, k:301, p:176, prot:17.9},
+    {n:"Schleie", c:"Fisch", na:33, k:369, p:207, prot:17.7},
+    {n:"Scholle", c:"Fisch", na:104, k:311, p:198, prot:17.1},
+    {n:"Seehecht (Hechtdorsch)", c:"Fisch", na:101, k:294, p:142, prot:17.2},
+    {n:"Seezunge", c:"Fisch", na:100, k:309, p:195, prot:17.5},
+    {n:"Waller (Wels)", c:"Fisch", na:20, k:421, p:151, prot:15.3},
+    {n:"Zander", c:"Fisch", na:24, k:377, p:191, prot:19.2},
+    // Krustentiere und Weichtiere
+    {n:"Garnelen (Nordseegarnelen)", c:"Meeresfrüchte", na:146, k:266, p:224, prot:18.6},
+    {n:"Hummer", c:"Meeresfrüchte", na:270, k:220, p:234, prot:15.9},
+    {n:"Krebs (Flusskrebs)", c:"Meeresfrüchte", na:253, k:254, p:224, prot:15.0},
+    {n:"Languste", c:"Meeresfrüchte", na:182, k:500, p:215, prot:17.2},
+    {n:"Miesmuscheln", c:"Meeresfrüchte", na:296, k:277, p:246, prot:9.8},
+    {n:"Tintenfisch", c:"Meeresfrüchte", na:387, k:273, p:143, prot:16.1},
+    // Wild und Geflügel
+    {n:"Ente", c:"Geflügel", na:38, k:270, p:196, prot:18.1},
+    {n:"Fasan", c:"Wild", na:32, k:317, p:245, prot:23.8},
+    {n:"Gans", c:"Geflügel", na:86, k:420, p:184, prot:15.7},
+    {n:"Hase", c:"Wild", na:44, k:276, p:210, prot:21.6},
+    {n:"Hirsch", c:"Wild", na:62, k:306, p:197, prot:20.6},
+    {n:"Huhn (Brust)", c:"Geflügel", na:66, k:264, p:212, prot:22.2},
+    {n:"Huhn (Herz)", c:"Geflügel", na:111, k:262, p:164, prot:17.3},
+    {n:"Huhn (Leber)", c:"Geflügel", na:68, k:218, p:240, prot:22.1},
+    {n:"Huhn (Schlegel, Keule)", c:"Geflügel", na:95, k:250, p:188, prot:18.2},
+    {n:"Huhn, Brathuhn", c:"Geflügel", na:83, k:359, p:200, prot:19.9},
+    {n:"Reh (Rücken)", c:"Wild", na:84, k:342, p:220, prot:22.4},
+    {n:"Truthahn", c:"Geflügel", na:63, k:300, p:226, prot:20.2},
+    {n:"Wildschwein", c:"Wild", na:94, k:359, p:167, prot:19.5},
+    // Würzmittel
+    {n:"Fleischbrühe, klar (Brühwürfel/-paste)", c:"Würzmittel", na:25000, k:500, p:700, prot:17.0},
+    {n:"Hefe", c:"Würzmittel", na:20, k:630, p:500, prot:16.7},
+    {n:"Remoulade (65% Fett)", c:"Würzmittel", na:265, k:49, p:55, prot:1.1},
+    {n:"Senf", c:"Würzmittel", na:1250, k:130, p:180, prot:6.0},
+    {n:"Tomatenketchup", c:"Würzmittel", na:1120, k:590, p:43, prot:2.1},
+    // Fertiggerichte
+    {n:"Frikadelle mit Bratkartoffeln & Ketchup", c:"Fertiggericht", na:258, k:309, p:69, prot:5.3},
+    {n:'Geschnetzeltes "Züricher Art"', c:"Fertiggericht", na:215, k:265, p:140, prot:10.5},
+    {n:"Grünkohl-Eintopf (Schwein/Kartoffeln)", c:"Fertiggericht", na:204, k:300, p:54, prot:3.7},
+    {n:"Gulaschsuppe (Konserve)", c:"Fertiggericht", na:432, k:298, p:105, prot:10.6},
+    {n:"Hühnerfrikassee", c:"Fertiggericht", na:227, k:161, p:92, prot:8.6},
+    {n:"Jägerschnitzel", c:"Fertiggericht", na:222, k:292, p:107, prot:12.6},
+    {n:"Kartoffelgratin", c:"Fertiggericht", na:205, k:314, p:60, prot:2.3},
+    {n:"Käsespätzle", c:"Fertiggericht", na:110, k:59, p:129, prot:7.9},
+    {n:"Königsberger Klopse (Konserve)", c:"Fertiggericht", na:735, k:145, p:83, prot:8.5},
+    {n:"Lasagne", c:"Fertiggericht", na:358, k:165, p:115, prot:8.2},
+    {n:"Pizza Margherita", c:"Fertiggericht", na:191, k:122, p:87, prot:8.1},
+    {n:"Pizza Salami", c:"Fertiggericht", na:340, k:140, p:99, prot:8.2},
+    {n:"Pizza Thunfisch", c:"Fertiggericht", na:303, k:200, p:61, prot:5.3},
+    {n:"Ravioli (Fleischfüllung)", c:"Fertiggericht", na:216, k:81, p:117, prot:5.9},
+    {n:"Spaghetti Bolognese", c:"Fertiggericht", na:213, k:157, p:85, prot:5.6},
+    // Getreide und Getreideprodukte
+    {n:"Buchweizengrütze", c:"Getreide", na:1, k:218, p:150, prot:7.5},
+    {n:"Buchweizenvollmehl", c:"Getreide", na:1, k:680, p:263, prot:10.9},
+    {n:"Eierteigwaren (Nudeln, Makkaroni)", c:"Getreide", na:17, k:164, p:191, prot:12.3},
+    {n:"Gerste (ganzes Korn), entspelzt", c:"Getreide", na:18, k:444, p:342, prot:9.8},
+    {n:"Grünkern (Dinkel, Spelz)", c:"Getreide", na:3, k:447, p:411, prot:11.0},
+    {n:"Hafer (ganzes Korn), entspelzt", c:"Getreide", na:8, k:355, p:342, prot:12.0},
+    {n:"Haferflocken", c:"Getreide", na:7, k:348, p:391, prot:12.5},
+    {n:"Hafermehl", c:"Getreide", na:6, k:268, p:405, prot:13.8},
+    {n:"Hirse (geschältes Korn)", c:"Getreide", na:3, k:150, p:310, prot:9.8},
+    {n:"Mais (ganzes Korn)", c:"Getreide", na:6, k:330, p:256, prot:8.5},
+    {n:"Cornflakes (Mais-Frühstücksflocken)", c:"Getreide", na:938, k:120, p:59, prot:7.2},
+    {n:"Maismehl", c:"Getreide", na:1, k:120, p:256, prot:8.3},
+    {n:"Reis, poliert (roh)", c:"Getreide", na:6, k:103, p:120, prot:6.8},
+    {n:"Reis, poliert, gekocht & abgetropft", c:"Getreide", na:448, k:31, p:36, prot:2.0},
+    {n:"Reis, unpoliert", c:"Getreide", na:10, k:150, p:325, prot:7.2},
+    {n:"Roggen (ganzes Korn)", c:"Getreide", na:4, k:510, p:336, prot:8.8},
+    {n:"Roggenmehl (Typ 1150)", c:"Getreide", na:1, k:297, p:196, prot:8.3},
+    {n:"Roggenmehl (Typ 1800)", c:"Getreide", na:2, k:439, p:326, prot:10.0},
+    {n:"Roggenmehl (Typ 815)", c:"Getreide", na:1, k:170, p:125, prot:6.4},
+    {n:"Sorghum (Mohrenhirse)", c:"Getreide", na:21, k:592, p:330, prot:10.3},
+    {n:"Weizen (ganzes Korn)", c:"Getreide", na:8, k:381, p:341, prot:11.7},
+    {n:"Weizenkeime", c:"Getreide", na:5, k:837, p:1100, prot:26.6},
+    {n:"Weizenkleie", c:"Getreide", na:2, k:1390, p:1290, prot:14.9},
+    {n:"Weizenmehl (Typ 1700, Vollkorn)", c:"Getreide", na:2, k:290, p:372, prot:11.2},
+    {n:"Weizenmehl (Typ 405)", c:"Getreide", na:2, k:108, p:74, prot:9.8},
+    {n:"Zwieback, eifrei", c:"Getreide", na:263, k:160, p:132, prot:9.2},
+    // Brot
+    {n:"Baguette", c:"Brot", na:451, k:100, p:78, prot:7.4},
+    {n:"Brötchen (Mehrkorn)", c:"Brot", na:418, k:171, p:141, prot:6.3},
+    {n:"Brötchen (Roggen)", c:"Brot", na:452, k:229, p:156, prot:6.4},
+    {n:"Brötchen (Weizen)", c:"Brot", na:451, k:100, p:78, prot:7.4},
+    {n:"Knäckebrot (Roggenbrot)", c:"Brot", na:681, k:345, p:236, prot:9.6},
+    {n:"Laugengebäck", c:"Brot", na:1184, k:129, p:427, prot:9.4},
+    {n:"Pumpernickel", c:"Brot", na:430, k:290, p:232, prot:6.5},
+    {n:"Roggenbrot", c:"Brot", na:523, k:244, p:118, prot:6.2},
+    {n:"Roggenvollkornbrot", c:"Brot", na:527, k:291, p:198, prot:6.8},
+    {n:"Weizenbrot (Weißbrot)", c:"Brot", na:540, k:132, p:87, prot:7.6},
+    {n:"Weizentoastbrot", c:"Brot", na:435, k:125, p:106, prot:7.4},
+    {n:"Weizenvollkornbrot", c:"Brot", na:448, k:220, p:195, prot:7.0},
+    // Brotaufstrich
+    {n:"Aprikosenkonfitüre", c:"Brotaufstrich", na:1, k:104, p:7, prot:0.3},
+    {n:"Erdbeerkonfitüre", c:"Brotaufstrich", na:1, k:55, p:9, prot:0.3},
+    {n:"Honig (Blütenhonig)", c:"Brotaufstrich", na:7, k:47, p:18, prot:0.4},
+    {n:"Nuss-Nougat-Creme", c:"Brotaufstrich", na:10, k:88, p:60, prot:5.9},
+    {n:"Zwetschgenkonfitüre", c:"Brotaufstrich", na:1, k:90, p:8, prot:0.2},
+    // Süßwaren
+    {n:"Eiscreme", c:"Süßwaren", na:40, k:123, p:72, prot:2.6},
+    {n:"Gummibonbon", c:"Süßwaren", na:60, k:360, p:4, prot:1.0},
+    {n:"Kakaopulver (schwach entölt)", c:"Süßwaren", na:17, k:1920, p:656, prot:19.8},
+    {n:"Keks (Butterkeks, Hartkeks)", c:"Süßwaren", na:387, k:139, p:122, prot:7.6},
+    {n:"Pfefferminzbonbon", c:"Süßwaren", na:3, k:0, p:0, prot:0.5},
+    {n:"Schokolade, Bitterschokolade (milchfrei)", c:"Süßwaren", na:19, k:397, p:287, prot:5.3},
+    {n:"Schokolade, Vollmilch", c:"Süßwaren", na:58, k:471, p:242, prot:9.2},
+    {n:"Weichkaramellbonbon", c:"Süßwaren", na:320, k:210, p:64, prot:2.1},
+    // Kuchen
+    {n:"Gedeckter Apfelkuchen (Mürbeteig)", c:"Kuchen", na:49, k:140, p:57, prot:2.8},
+    {n:"Butterkuchen (Hefeteig)", c:"Kuchen", na:13, k:123, p:79, prot:6.1},
+    {n:"Käsesahnetorte", c:"Kuchen", na:50, k:102, p:88, prot:5.9},
+    {n:"Schwarzwälder Kirschtorte", c:"Kuchen", na:1, k:55, p:9, prot:0.3},
+    {n:"Streuselkuchen", c:"Kuchen", na:10, k:88, p:60, prot:5.9},
+    // Nüsse und Samen
+    {n:"Cashewnuss", c:"Nüsse", na:14, k:552, p:373, prot:17.5},
+    {n:"Edelkastanie (Marone)", c:"Nüsse", na:1.5, k:707, p:87, prot:2.5},
+    {n:"Erdnuss, geröstet", c:"Nüsse", na:6, k:777, p:409, prot:25.6},
+    {n:"Erdnuss", c:"Nüsse", na:11, k:661, p:341, prot:25.3},
+    {n:"Haselnuss", c:"Nüsse", na:2, k:635, p:333, prot:12.0},
+    {n:"Kokosnuss", c:"Nüsse", na:35, k:379, p:94, prot:3.9},
+    {n:"Paranuss", c:"Nüsse", na:2, k:644, p:674, prot:13.6},
+    {n:"Walnuss", c:"Nüsse", na:2, k:545, p:409, prot:14.4},
+    // Früchte und Obst
+    {n:"Ananas", c:"Obst", na:2, k:173, p:9, prot:0.5},
+    {n:"Apfel, getrocknet", c:"Obst", na:10, k:622, p:50, prot:1.4},
+    {n:"Apfel", c:"Obst", na:3, k:144, p:12, prot:0.3},
+    {n:"Apfelsine (Orange)", c:"Obst", na:1, k:177, p:23, prot:1.0},
+    {n:"Aprikose, getrocknet", c:"Obst", na:11, k:1370, p:114, prot:5.0},
+    {n:"Aprikose", c:"Obst", na:2, k:278, p:21, prot:0.9},
+    {n:"Avocado", c:"Obst", na:3, k:503, p:38, prot:1.9},
+    {n:"Banane", c:"Obst", na:1, k:393, p:28, prot:1.2},
+    {n:"Birne", c:"Obst", na:2, k:126, p:15, prot:0.5},
+    {n:"Brombeeren", c:"Obst", na:3, k:189, p:30, prot:1.2},
+    {n:"Datteln, getrocknet", c:"Obst", na:35, k:650, p:57, prot:1.9},
+    {n:"Erdbeeren", c:"Obst", na:3, k:147, p:29, prot:0.8},
+    {n:"Feigen, getrocknet", c:"Obst", na:40, k:850, p:108, prot:3.5},
+    {n:"Feigen", c:"Obst", na:2, k:240, p:32, prot:1.3},
+    {n:"Grapefruit (Pampelmuse)", c:"Obst", na:2, k:180, p:17, prot:0.6},
+    {n:"Hagebutte", c:"Obst", na:146, k:291, p:258, prot:3.6},
+    {n:"Heidelbeeren, Blaubeeren", c:"Obst", na:1, k:65, p:13, prot:0.6},
+    {n:"Himbeeren", c:"Obst", na:1, k:170, p:44, prot:1.3},
+    {n:"Holunderbeeren, schwarz", c:"Obst", na:1, k:305, p:57, prot:2.5},
+    {n:"Johannisbeeren, rot", c:"Obst", na:1, k:238, p:27, prot:1.1},
+    {n:"Johannisbeeren, schwarz", c:"Obst", na:2, k:310, p:40, prot:1.3},
+    {n:"Kirsche, sauer", c:"Obst", na:2, k:114, p:19, prot:0.9},
+    {n:"Kirsche, süß", c:"Obst", na:3, k:229, p:20, prot:0.9},
+    {n:"Kiwi", c:"Obst", na:4, k:295, p:31, prot:1.0},
+    {n:"Mandarine", c:"Obst", na:1, k:210, p:20, prot:0.7},
+    {n:"Mango", c:"Obst", na:5, k:190, p:13, prot:0.6},
+    {n:"Mirabelle", c:"Obst", na:0, k:230, p:33, prot:0.7},
+    {n:"Oliven, grün, mariniert", c:"Obst", na:2100, k:43, p:17, prot:1.4},
+    {n:"Pfirsiche, getrocknet", c:"Obst", na:9, k:1340, p:126, prot:3.0},
+    {n:"Pfirsiche", c:"Obst", na:1, k:205, p:23, prot:0.8},
+    {n:"Pflaume, getrocknet", c:"Obst", na:8, k:824, p:73, prot:2.3},
+    {n:"Pflaume", c:"Obst", na:2, k:221, p:18, prot:0.6},
+    {n:"Preiselbeeren, Kronsbeeren", c:"Obst", na:2, k:72, p:10, prot:0.3},
+    {n:"Sanddornbeeren", c:"Obst", na:4, k:133, p:9, prot:1.4},
+    {n:"Stachelbeeren", c:"Obst", na:2, k:203, p:30, prot:0.8},
+    {n:"Wassermelone", c:"Obst", na:1, k:158, p:11, prot:0.6},
+    {n:"Weinbeeren, getrocknet (Rosinen)", c:"Obst", na:21, k:782, p:110, prot:2.5},
+    {n:"Weinbeeren, Weintrauben", c:"Obst", na:2, k:192, p:20, prot:0.7},
+    {n:"Zitrone", c:"Obst", na:3, k:149, p:16, prot:0.7},
+    {n:"Zuckermelone (Honigmelone)", c:"Obst", na:20, k:330, p:21, prot:0.9},
+    // Gemüse und Gemüseprodukte
+    {n:"Artischocke", c:"Gemüse", na:47, k:353, p:130, prot:2.4},
+    {n:"Aubergine", c:"Gemüse", na:3, k:224, p:21, prot:1.2},
+    {n:"Bambussprossen", c:"Gemüse", na:6, k:468, p:53, prot:2.5},
+    {n:"Bleichsellerie", c:"Gemüse", na:132, k:344, p:48, prot:1.2},
+    {n:"Blumenkohl", c:"Gemüse", na:16, k:328, p:54, prot:2.5},
+    {n:"Bohnen, weiß, trocken (Samen)", c:"Gemüse", na:4, k:1340, p:426, prot:21.3},
+    {n:"Broccoli", c:"Gemüse", na:19, k:373, p:82, prot:3.3},
+    {n:"Champignon, frisch", c:"Gemüse", na:8, k:417, p:125, prot:2.7},
+    {n:"Gurke", c:"Gemüse", na:9, k:141, p:23, prot:0.6},
+    {n:"Chicorée", c:"Gemüse", na:4, k:194, p:26, prot:1.3},
+    {n:"Chinakohl", c:"Gemüse", na:19, k:144, p:30, prot:1.2},
+    {n:"Endivie", c:"Gemüse", na:53, k:346, p:54, prot:1.8},
+    {n:"Erbsen, grün, frisch", c:"Gemüse", na:2, k:213, p:91, prot:5.6},
+    {n:"Erbsen, trocken (Samen)", c:"Gemüse", na:26, k:941, p:375, prot:22.9},
+    {n:"Feldsalat (Rapunzel)", c:"Gemüse", na:4, k:421, p:49, prot:1.8},
+    {n:"Fenchel", c:"Gemüse", na:86, k:494, p:51, prot:2.4},
+    {n:"Gartenkresse", c:"Gemüse", na:5, k:550, p:38, prot:4.2},
+    {n:"Grünkohl", c:"Gemüse", na:42, k:490, p:87, prot:4.3},
+    {n:"Kartoffeln, geschält, frisch", c:"Gemüse", na:3, k:411, p:50, prot:2.0},
+    {n:"Kartoffeln, ungeschält, frisch", c:"Gemüse", na:3, k:411, p:50, prot:2.0},
+    {n:"Kartoffeln, geschält, gegart", c:"Gemüse", na:2, k:333, p:46, prot:1.9},
+    {n:"Kartoffeln (Konserve), abgetropft", c:"Gemüse", na:296, k:342, p:49, prot:1.9},
+    {n:"Kartoffelbreipulver", c:"Gemüse", na:160, k:1150, p:310, prot:8.6},
+    {n:"Kartoffelpuffer", c:"Gemüse", na:124, k:381, p:63, prot:2.9},
+    {n:"Kartoffelchips, verzehrfertig", c:"Gemüse", na:450, k:1000, p:147, prot:5.5},
+    {n:"Kartoffelklöße", c:"Gemüse", na:1180, k:750, p:240, prot:7.1},
+    {n:"Kartoffelkroketten", c:"Gemüse", na:120, k:290, p:92, prot:4.0},
+    {n:"Kichererbsen, trocken (Samen)", c:"Gemüse", na:25, k:810, p:407, prot:19.8},
+    {n:"Kohlrabi", c:"Gemüse", na:32, k:380, p:50, prot:1.9},
+    {n:"Kohlrübe (Steckrübe)", c:"Gemüse", na:10, k:227, p:31, prot:1.2},
+    {n:"Kopfsalat", c:"Gemüse", na:7.5, k:172, p:22, prot:1.3},
+    {n:"Kürbis", c:"Gemüse", na:1, k:383, p:44, prot:1.1},
+    {n:"Limabohne, trocken (Samen)", c:"Gemüse", na:13, k:1750, p:353, prot:20.6},
+    {n:"Linse, trocken (Samen)", c:"Gemüse", na:7, k:837, p:411, prot:23.5},
+    {n:"Mangold", c:"Gemüse", na:90, k:376, p:39, prot:2.1},
+    {n:"Meerrettich", c:"Gemüse", na:9, k:554, p:65, prot:2.8},
+    {n:"Mohn, trocken (Samen)", c:"Gemüse", na:21, k:705, p:854, prot:20.2},
+    {n:"Möhre (Karotte)", c:"Gemüse", na:60, k:290, p:35, prot:1.0},
+    {n:"Mungbohne, trocken (Samen)", c:"Gemüse", na:6, k:1210, p:371, prot:24.0},
+    {n:"Paprikaschote", c:"Gemüse", na:3, k:177, p:29, prot:1.2},
+    {n:"Petersilienblatt", c:"Gemüse", na:33, k:1000, p:128, prot:4.4},
+    {n:"Petersilienwurzel", c:"Gemüse", na:12, k:400, p:57, prot:2.9},
+    {n:"Pfifferling (Rehling)", c:"Gemüse", na:3, k:367, p:56, prot:1.6},
+    {n:"Pommes Frites", c:"Gemüse", na:222, k:461, p:57, prot:2.3},
+    {n:"Popcorn", c:"Gemüse", na:3, k:240, p:281, prot:12.7},
+    {n:"Porree (Lauch)", c:"Gemüse", na:5, k:235, p:46, prot:2.2},
+    {n:"Radieschen", c:"Gemüse", na:17, k:255, p:26, prot:1.1},
+    {n:"Rettich", c:"Gemüse", na:18, k:322, p:29, prot:1.1},
+    {n:"Rhabarber", c:"Gemüse", na:2, k:270, p:24, prot:0.6},
+    {n:"Rote Beete, gedünstet", c:"Gemüse", na:223, k:245, p:35, prot:1.2},
+    {n:"Rote Beete (Konserve), abgetropft", c:"Gemüse", na:255, k:192, p:38, prot:1.4},
+    {n:"Rosenkohl", c:"Gemüse", na:10, k:387, p:84, prot:4.5},
+    {n:"Rote Rübe (Rote Beete)", c:"Gemüse", na:58, k:336, p:45, prot:1.5},
+    {n:"Rotkohl (Blaukraut)", c:"Gemüse", na:4, k:266, p:30, prot:1.5},
+    {n:"Sauerkraut, abgetropft", c:"Gemüse", na:355, k:288, p:43, prot:1.5},
+    {n:"Schnittlauch", c:"Gemüse", na:3, k:434, p:75, prot:3.6},
+    {n:"Schwarzwurzel", c:"Gemüse", na:5, k:320, p:76, prot:1.4},
+    {n:"Sellerieknolle", c:"Gemüse", na:77, k:321, p:80, prot:1.6},
+    {n:"Sesam, trocken (Samen)", c:"Gemüse", na:45, k:458, p:607, prot:17.7},
+    {n:"Sojabohne, trocken (Samen)", c:"Gemüse", na:5, k:1800, p:550, prot:33.7},
+    {n:"Sojamehl (vollfett)", c:"Gemüse", na:4, k:1870, p:553, prot:37.3},
+    {n:"Sonnenblume, trocken (Samen)", c:"Gemüse", na:2, k:725, p:618, prot:22.5},
+    {n:"Spargel (in Dosen)", c:"Gemüse", na:368, k:101, p:38, prot:1.9},
+    {n:"Spargel", c:"Gemüse", na:4, k:203, p:46, prot:1.9},
+    {n:"Spinat", c:"Gemüse", na:65, k:633, p:55, prot:2.5},
+    {n:"Steinpilz, frisch", c:"Gemüse", na:6, k:341, p:85, prot:3.6},
+    {n:"Tomate", c:"Gemüse", na:4, k:242, p:18, prot:1.0},
+    {n:"Weiße Rübe (Wasserrübe)", c:"Gemüse", na:58, k:238, p:31, prot:1.0},
+    {n:"Weißkraut (Weißkohl)", c:"Gemüse", na:12, k:208, p:28, prot:1.4},
+    {n:"Wirsing", c:"Gemüse", na:9, k:252, p:56, prot:3.0},
+    {n:"Zucchini", c:"Gemüse", na:3, k:152, p:23, prot:1.6},
+    {n:"Zuckermais (Speisemais)", c:"Gemüse", na:300, k:290, p:83, prot:3.3},
+    {n:"Zuckermais, gegart", c:"Gemüse", na:1, k:250, p:114, prot:3.3},
+    {n:"Zuckermais (Konserve), abgetropft", c:"Gemüse", na:223, k:175, p:98, prot:3.1},
+    {n:"Zwiebel", c:"Gemüse", na:10, k:135, p:42, prot:1.3},
+    // Getränke
+    {n:"Ananassaft (in Dose)", c:"Getränk", na:1, k:140, p:10, prot:0.4},
+    {n:"Apfelsaft (Handelsware)", c:"Getränk", na:2, k:116, p:7, prot:0.1},
+    {n:"Apfelsinensaft (Orangensaft), ungesüßt", c:"Getränk", na:1, k:172, p:16, prot:0.7},
+    {n:"Grapefruitsaft (Handelsware)", c:"Getränk", na:1, k:149, p:13, prot:0.5},
+    {n:"Johannisbeernektar, rot", c:"Getränk", na:0, k:110, p:7, prot:0.4},
+    {n:"Johannisbeernektar, schwarz", c:"Getränk", na:5, k:98, p:10, prot:0.4},
+    {n:"Nährbier (Malzbier), alkoholarm", c:"Getränk", na:7, k:52, p:20, prot:0.5},
+    {n:"Rotwein, leichte Qualität", c:"Getränk", na:3, k:90, p:10, prot:0.2},
+    {n:"Tomatensaft (Handelsware)", c:"Getränk", na:5, k:236, p:16, prot:0.8},
+    {n:"Vollbier, hell", c:"Getränk", na:5, k:38, p:28, prot:0.5},
+    {n:"Weißbier", c:"Getränk", na:4, k:21, p:13, prot:0.3},
+    {n:"Weißwein, mittlere Qualität", c:"Getränk", na:2, k:82, p:15, prot:0.2}
+  ];
+
+  // ---------- State ----------
+  var profile = null;
+  var todayKey = new Date().toISOString().slice(0,10);
+  var dayLog = { fluid: [], meals: [] };
+  var selectedStage = null;
+  var selectedFood = null;
+  var sampleCap = null;
+  var sampleImagesOk = false;
+  var sampleToolsOk = false;
+
+  function loadStorage(){
+    try{ var p = localStorage.getItem("nk_profile"); if(p) profile = JSON.parse(p); }catch(e){ profile = null; }
+    try{ var d = localStorage.getItem("nk_day_" + todayKey); if(d) dayLog = JSON.parse(d); }catch(e){ dayLog = { fluid: [], meals: [] }; }
+  }
+  function saveProfile(){ try{ localStorage.setItem("nk_profile", JSON.stringify(profile)); }catch(e){} }
+  function saveDay(){ try{ localStorage.setItem("nk_day_" + todayKey, JSON.stringify(dayLog)); }catch(e){} }
+
+  // Reset the log automatically at midnight, even if the app is left open across the day change.
+  // Old day-keys are kept in localStorage (small, per-day) so nothing is lost — only today's view resets.
+  function checkDateRollover(){
+    var newKey = new Date().toISOString().slice(0,10);
+    if(newKey !== todayKey){
+      todayKey = newKey;
+      try{
+        var existing = localStorage.getItem("nk_day_" + todayKey);
+        dayLog = existing ? JSON.parse(existing) : { fluid: [], meals: [] };
+      }catch(e){ dayLog = { fluid: [], meals: [] }; }
+      if(profile) renderDashboard();
+    }
+  }
+  document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "visible") checkDateRollover(); });
+  window.addEventListener("focus", checkDateRollover);
+  setInterval(checkDateRollover, 60000);
+
+  // ---------- Stage grid ----------
+  var stageGrid = document.getElementById("stageGrid");
+  STAGES.forEach(function(s){
+    var btn = document.createElement("button");
+    btn.type = "button"; btn.className = "stage-opt";
+    btn.innerHTML = "<strong>"+s.label+"</strong><span>"+s.sub+"</span>";
+    btn.addEventListener("click", function(){
+      selectedStage = s.id;
+      Array.prototype.forEach.call(stageGrid.children, function(c){ c.classList.remove("selected"); });
+      btn.classList.add("selected");
+      checkOnboardReady();
+    });
+    stageGrid.appendChild(btn);
+  });
+
+  var weightInput = document.getElementById("weightInput");
+  weightInput.addEventListener("input", checkOnboardReady);
+  function checkOnboardReady(){
+    var w = parseFloat(weightInput.value);
+    document.getElementById("saveProfileBtn").disabled = !(selectedStage && w > 0);
+  }
+
+  document.getElementById("saveProfileBtn").addEventListener("click", function(){
+    var s = STAGES.find(function(x){ return x.id === selectedStage; });
+    var w = parseFloat(weightInput.value);
+    profile = { stageId:s.id, stageLabel:s.label, weight:w,
+      limits:{ na:s.na, k:s.k, p:s.p, prot:Math.round(s.protPerKg*w), fluid:s.fluid } };
+    saveProfile();
+    closeOnboarding();
+    renderDashboard();
+  });
+
+  function openOnboarding(isEdit){
+    var backdrop = document.getElementById("onboardBackdrop");
+    var closeBtn = document.getElementById("closeOnboard");
+    document.getElementById("onboardTitle").textContent = isEdit ? "Profil bearbeiten" : "Willkommen bei NierenKompass";
+    closeBtn.style.visibility = isEdit ? "visible" : "hidden";
+    selectedStage = null;
+    Array.prototype.forEach.call(stageGrid.children, function(c){ c.classList.remove("selected"); });
+    weightInput.value = "";
+    if(isEdit && profile){
+      selectedStage = profile.stageId;
+      var idx = STAGES.findIndex(function(x){ return x.id === profile.stageId; });
+      if(idx >= 0) stageGrid.children[idx].classList.add("selected");
+      weightInput.value = profile.weight;
+    }
+    checkOnboardReady();
+    backdrop.style.display = "flex";
+  }
+  function closeOnboarding(){ document.getElementById("onboardBackdrop").style.display = "none"; }
+  document.getElementById("closeOnboard").addEventListener("click", closeOnboarding);
+  document.getElementById("settingsBtn").addEventListener("click", function(){ openOnboarding(true); });
+  document.getElementById("editProfileBtn").addEventListener("click", function(){ openOnboarding(true); });
+
+  // ---------- Food search ----------
+  function lookupFoodDB(query, limit){
+    if(!query) return [];
+    var q = String(query).trim().toLowerCase();
+    if(!q) return [];
+    return FOOD_DB.filter(function(f){ return f.n.toLowerCase().indexOf(q) !== -1; }).slice(0, limit || 12);
+  }
+
+  var foodSearch = document.getElementById("foodSearch");
+  var foodResults = document.getElementById("foodResults");
+  var selectedFoodCard = document.getElementById("selectedFoodCard");
+  var sfGrams = document.getElementById("sfGrams");
+
+  function renderFoodResults(query){
+    foodResults.innerHTML = "";
+    if(!query || query.trim().length === 0){ foodResults.style.display = "none"; return; }
+    var matches = lookupFoodDB(query, 12);
+    foodResults.style.display = "block";
+    if(matches.length === 0){
+      foodResults.innerHTML = '<div class="food-empty">Kein Treffer. Du kannst die Werte unten auch manuell eintragen.</div>';
+      return;
+    }
+    matches.forEach(function(f){
+      var row = document.createElement("div");
+      row.className = "food-row";
+      row.innerHTML = '<div><div class="fname">'+f.n+'</div><div class="fvals">Na '+f.na+' · K '+f.k+' · P '+f.p+' · Prot '+f.prot+'g /100g</div></div><span class="fcat">'+f.c+'</span>';
+      row.addEventListener("click", function(){ selectFood(f); });
+      foodResults.appendChild(row);
+    });
+  }
+  foodSearch.addEventListener("input", function(){ renderFoodResults(foodSearch.value); });
+
+  function selectFood(f){
+    selectedFood = f;
+    foodSearch.value = "";
+    foodResults.style.display = "none";
+    foodResults.innerHTML = "";
+    document.getElementById("sfName").textContent = f.n;
+    sfGrams.value = 100;
+    selectedFoodCard.style.display = "block";
+    recomputeFromFood();
+  }
+  document.getElementById("sfClear").addEventListener("click", function(){
+    selectedFood = null;
+    selectedFoodCard.style.display = "none";
+  });
+  sfGrams.addEventListener("input", recomputeFromFood);
+
+  function recomputeFromFood(){
+    if(!selectedFood) return;
+    var g = parseFloat(sfGrams.value) || 0;
+    var factor = g / 100;
+    var na = Math.round(selectedFood.na * factor);
+    var k = Math.round(selectedFood.k * factor);
+    var p = Math.round(selectedFood.p * factor);
+    var prot = Math.round(selectedFood.prot * factor * 10) / 10;
+    document.getElementById("sfComputed").textContent = "→ Na "+na+"mg · K "+k+"mg · P "+p+"mg · Protein "+prot+"g";
+    document.getElementById("mealName").value = selectedFood.n + " (" + g + "g)";
+    document.getElementById("mealNa").value = na;
+    document.getElementById("mealK").value = k;
+    document.getElementById("mealP").value = p;
+    document.getElementById("mealProt").value = prot;
+  }
+
+  // ---------- Photo recognition (sample capability) ----------
+  var photoBtn = document.getElementById("photoBtn");
+  var photoInput = document.getElementById("photoInput");
+  var photoStatus = document.getElementById("photoStatus");
+  var photoUnavailableNote = document.getElementById("photoUnavailableNote");
+
+  function setPhotoStatus(kind, html){
+    if(!kind){ photoStatus.style.display = "none"; return; }
+    photoStatus.className = "photo-status" + (kind === "error" ? " error" : kind === "success" ? " success" : "");
+    photoStatus.style.display = "flex";
+    photoStatus.innerHTML = html;
+  }
+
+  async function initSampleCapability(){
+    // Outside the published claude.ai view (e.g. a locally saved/offline copy of this file)
+    // window.claude does not exist at all — degrade cleanly and explain why.
+    if(!window.claude || typeof window.claude.use !== "function"){
+      photoUnavailableNote.style.display = "block";
+      return;
+    }
+    try{
+      sampleCap = await window.claude.use("sample");
+    }catch(e){ sampleCap = null; }
+    if(!sampleCap){
+      // Not granted / not available in this view — explain rather than silently vanish.
+      photoUnavailableNote.style.display = "block";
+      return;
+    }
+    // IMPORTANT: we deliberately do NOT call sampleCap.limits() or sample.json() here.
+    // Anything that can trigger the viewer's consent prompt should only fire from a
+    // real user gesture (the photo button click below) — calling it eagerly on page
+    // load risks an unexpected/early consent dialog that gets missed or dismissed,
+    // which then silently blocks the feature for the rest of the session.
+    photoBtn.style.display = "flex";
+  }
+
+  var limitsChecked = false;
+
+  photoBtn.addEventListener("click", async function(){
+    if(!sampleCap) return;
+    if(!limitsChecked){
+      photoBtn.disabled = true;
+      try{
+        var limits = await sampleCap.limits();
+        limitsChecked = true;
+        if(limits && limits.images){
+          sampleImagesOk = true;
+          photoInput.accept = limits.images.mediaTypes.join(",");
+        } else {
+          photoBtn.style.display = "none";
+          photoUnavailableNote.style.display = "block";
+          photoBtn.disabled = false;
+          return;
+        }
+        if(limits && limits.tools){ sampleToolsOk = true; }
+      }catch(e){
+        limitsChecked = true;
+        var c = e && e.code;
+        if(c === "not_granted"){
+          photoBtn.style.display = "none";
+          photoUnavailableNote.style.display = "block";
+          photoBtn.disabled = false;
+          return;
+        }
+        // Unknown error probing limits — still try opening the picker; the real
+        // sample.json() call below will surface a clear error if something's wrong.
+      }
+      photoBtn.disabled = false;
+    }
+    photoInput.click();
+  });
+
+  var lookupFoodTool = {
+    name: "lookupFood",
+    description: "Sucht in der App-eigenen deutschen Nährwertdatenbank (Quelle: MEDICE Lebensmittel-Tabellen für Dialyse-Patienten) nach einem Lebensmittelnamen und liefert bis zu 5 Treffer mit Natrium/Kalium/Phosphat (mg) und Protein (g) je 100g essbarem Anteil zurück. Nutze dies, um erkannte Zutaten mit bekannten, geprüften Werten abzugleichen, statt sie zu schätzen.",
+    inputSchema: { type: "object", properties: { query: { type: "string", description: "Lebensmittelname auf Deutsch, z. B. 'Hähnchenbrust' oder 'Reis'" } }, required: ["query"] },
+    execute: function(input){
+      var matches = lookupFoodDB(input && input.query, 5);
+      return matches.map(function(f){ return { name: f.n, kategorie: f.c, je100g: { na: f.na, k: f.k, p: f.p, prot: f.prot } }; });
+    }
+  };
+
+  photoInput.addEventListener("change", async function(){
+    var file = photoInput.files && photoInput.files[0];
+    photoInput.value = "";
+    if(!file || !sampleCap) return;
+
+    setPhotoStatus("loading", '<div class="spinner"></div><span>Analysiere Foto …</span>');
+    photoBtn.disabled = true;
+
+    var prompt = "Auf dem Foto ist eines von drei Dingen zu sehen: (a) eine Nährwerttabelle/ein Lebensmitteletikett, " +
+      "(b) ein Rezept mit Zutatenliste, oder (c) ein fertiges Gericht bzw. ein Teller Essen. " +
+      "Fall (a)/(b): Lies die Werte für NATRIUM (mg), KALIUM (mg), PHOSPHAT/PHOSPHOR (mg) und PROTEIN/EIWEISS (g) ab bzw. berechne sie aus der Zutatenliste für eine realistische Portion. " +
+      "Fall (c): Identifiziere die sichtbaren Lebensmittel auf dem Teller/Foto, schätze anhand der Bildgröße (Teller, Besteck als Referenz) die Portionsgröße jeder Komponente in Gramm. " +
+      (sampleToolsOk ? "Nutze das Tool 'lookupFood', um für jede erkannte Zutat geprüfte Werte aus der App-Datenbank zu holen (je 100g), skaliere sie auf die geschätzte Menge und summiere alle Zutaten. Wenn eine Zutat dort keinen Treffer hat, schätze die Werte anhand allgemeiner Ernährungskenntnisse. " : "Schätze die Werte anhand allgemeiner Ernährungskenntnisse für die geschätzten Portionsmengen. ") +
+      "Gib am Ende IMMER die GESAMTWERTE für die ganze erkannte Menge/Portion zurück (nicht pro 100g). " +
+      "Falls auf dem Foto eine Portions- oder Packungsgröße explizit angegeben ist, nutze diese Gramm-Angabe. " +
+      "Antworte NUR mit einem JSON-Objekt in genau dieser Form, keine Erklärung, kein Markdown: " +
+      '{"name": string, "grams": number, "na": number, "k": number, "p": number, "prot": number}';
+
+    var opts = { images: file, modelTier: "default", cache: false };
+    if(sampleToolsOk){ opts.tools = [lookupFoodTool]; }
+
+    try{
+      var data = await sampleCap.json(prompt, opts);
+      selectedFood = null;
+      selectedFoodCard.style.display = "none";
+      var g = (data && data.grams) ? Math.round(data.grams) : 100;
+      document.getElementById("mealName").value = (data && data.name) ? String(data.name) : "Foto-Erkennung";
+      document.getElementById("mealNa").value = data && data.na != null ? Math.round(data.na) : "";
+      document.getElementById("mealK").value = data && data.k != null ? Math.round(data.k) : "";
+      document.getElementById("mealP").value = data && data.p != null ? Math.round(data.p) : "";
+      document.getElementById("mealProt").value = data && data.prot != null ? Math.round(data.prot*10)/10 : "";
+      setPhotoStatus("success", "✓ Werte erkannt (~" + g + "g) — bei Essensfotos ist das eine Schätzung. Bitte vor dem Speichern prüfen.");
+    }catch(e){
+      var code = e && e.code;
+      var msg = "Konnte die Werte nicht auslesen. Bitte manuell eintragen.";
+      if(code === "not_granted"){ msg = "Foto-Analyse wurde nicht erlaubt."; }
+      else if(code === "images_unavailable"){
+        msg = "Foto-Analyse ist in dieser Ansicht nicht verfügbar.";
+        photoBtn.style.display = "none";
+        photoUnavailableNote.style.display = "block";
+      }
+      else if(code === "image_rejected") msg = "Dieses Bild konnte nicht verarbeitet werden. Bitte ein anderes Foto (JPEG/PNG) wählen.";
+      else if(code === "rate_limited") msg = "Gerade zu viele Anfragen — bitte kurz warten und erneut versuchen.";
+      else if(code === "refused") msg = "Claude konnte dieses Bild nicht auswerten. Bitte ein anderes Foto versuchen.";
+      else if(code === "tools_unavailable"){ sampleToolsOk = false; msg = "Konnte die Datenbank nicht automatisch abgleichen. Bitte erneut versuchen."; }
+      setPhotoStatus("error", "⚠ " + msg);
+    }finally{
+      photoBtn.disabled = false;
+    }
+  });
+
+  // ---------- Meal sheet open/close ----------
+  function openMealSheet(){
+    selectedFood = null;
+    selectedFoodCard.style.display = "none";
+    foodSearch.value = "";
+    foodResults.style.display = "none";
+    setPhotoStatus(null);
+    ["mealName","mealNa","mealK","mealP","mealProt","mealFluid"].forEach(function(id){ document.getElementById(id).value = ""; });
+    document.getElementById("mealBackdrop").style.display = "flex";
+  }
+  function closeMealSheet(){ document.getElementById("mealBackdrop").style.display = "none"; }
+  document.getElementById("addMealBtn").addEventListener("click", openMealSheet);
+  document.getElementById("closeMeal").addEventListener("click", closeMealSheet);
+
+  document.getElementById("saveMealBtn").addEventListener("click", function(){
+    var name = document.getElementById("mealName").value.trim();
+    if(!name){ document.getElementById("mealName").focus(); return; }
+    var meal = {
+      name: name,
+      na: parseFloat(document.getElementById("mealNa").value) || 0,
+      k: parseFloat(document.getElementById("mealK").value) || 0,
+      p: parseFloat(document.getElementById("mealP").value) || 0,
+      prot: parseFloat(document.getElementById("mealProt").value) || 0,
+      fluid: parseFloat(document.getElementById("mealFluid").value) || 0,
+      icon: selectedFood ? "🍽️" : "🍽️",
+      time: new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})
+    };
+    dayLog.meals.push(meal);
+    if(meal.fluid > 0){ dayLog.fluid.push(meal.fluid); }
+    saveDay();
+    closeMealSheet();
+    renderDashboard();
+  });
+
+  // ---------- Fluid quick add ----------
+  Array.prototype.forEach.call(document.querySelectorAll(".chip"), function(chip){
+    chip.addEventListener("click", function(){
+      var ml = parseFloat(chip.getAttribute("data-ml"));
+      dayLog.fluid.push(ml);
+      saveDay();
+      renderDashboard();
+    });
+  });
+
+  // ---------- Dashboard rendering ----------
+  function sum(arr){ return arr.reduce(function(a,b){ return a+b; }, 0); }
+  function barClass(pct){ if(pct > 100) return "over"; if(pct >= 75) return "warn"; return "ok"; }
+
+  function renderDashboard(){
+    if(!profile) return;
+    document.getElementById("dashboard").style.display = "block";
+    document.getElementById("profileLabel").textContent = profile.stageLabel + " · " + profile.weight + " kg";
+
+    var totals = {
+      na: sum(dayLog.meals.map(function(m){ return m.na; })),
+      k: sum(dayLog.meals.map(function(m){ return m.k; })),
+      p: sum(dayLog.meals.map(function(m){ return m.p; })),
+      prot: sum(dayLog.meals.map(function(m){ return m.prot; }))
+    };
+
+    var nutrients = [
+      {name:"🧂 Natrium", unit:"mg", val:totals.na, limit:profile.limits.na},
+      {name:"🍌 Kalium", unit:"mg", val:totals.k, limit:profile.limits.k},
+      {name:"🦴 Phosphat", unit:"mg", val:totals.p, limit:profile.limits.p},
+      {name:"🥩 Protein", unit:"g", val:totals.prot, limit:profile.limits.prot}
+    ];
+
+    var container = document.getElementById("nutrientCards");
+    container.innerHTML = "";
+    nutrients.forEach(function(n){
+      var pct = n.limit > 0 ? Math.round((n.val / n.limit) * 100) : 0;
+      var bc = barClass(pct);
+      var remaining = n.limit - n.val;
+      var card = document.createElement("div");
+      card.className = "nutrient-card";
+      var note = remaining >= 0 ? ("Noch " + remaining + " " + n.unit + " übrig heute") : ("Limit um " + Math.abs(remaining) + " " + n.unit + " überschritten");
+      card.innerHTML =
+        '<div class="nutrient-row"><span class="nutrient-name">'+n.name+'</span><span class="nutrient-vals"><b>'+n.val+'</b> / '+n.limit+' '+n.unit+'</span></div>' +
+        '<div class="bar-track"><div class="bar-fill '+bc+'" style="width:'+Math.min(pct,100)+'%"></div></div>' +
+        '<div class="nutrient-note '+(remaining<0 ? "over" : "")+'">'+note+'</div>';
+      container.appendChild(card);
+    });
+
+    var fluidTotal = sum(dayLog.fluid);
+    var fluidPct = profile.limits.fluid > 0 ? Math.round((fluidTotal / profile.limits.fluid) * 100) : 0;
+    document.getElementById("fluidVals").innerHTML = "<b>"+fluidTotal+"</b> / "+profile.limits.fluid+" ml";
+    var fb = document.getElementById("fluidBar");
+    fb.style.width = Math.min(fluidPct,100) + "%";
+    fb.className = "bar-fill " + barClass(fluidPct);
+
+    var mealList = document.getElementById("mealList");
+    mealList.innerHTML = "";
+    if(dayLog.meals.length === 0){
+      mealList.innerHTML = '<div class="empty-state">Noch keine Mahlzeiten heute erfasst.<br>Tippe oben auf „+ Mahlzeit", um zu starten.</div>';
+    } else {
+      dayLog.meals.slice().reverse().forEach(function(m){
+        var origIndex = dayLog.meals.indexOf(m);
+        var item = document.createElement("div");
+        item.className = "meal-item";
+        item.innerHTML =
+          '<div class="meal-icon">'+(m.icon||"🍽️")+'</div>' +
+          '<div class="meal-info"><div class="meal-name">'+m.name+'</div><div class="meal-detail">'+m.time+' · Na '+m.na+' · K '+m.k+' · P '+m.p+' · Prot '+m.prot+'g</div></div>' +
+          '<button class="del" data-idx="'+origIndex+'">✕</button>';
+        mealList.appendChild(item);
+      });
+      Array.prototype.forEach.call(mealList.querySelectorAll(".del"), function(btn){
+        btn.addEventListener("click", function(){
+          var idx = parseInt(btn.getAttribute("data-idx"), 10);
+          var removed = dayLog.meals.splice(idx, 1)[0];
+          if(removed && removed.fluid > 0){
+            var fi = dayLog.fluid.indexOf(removed.fluid);
+            if(fi >= 0) dayLog.fluid.splice(fi, 1);
+          }
+          saveDay();
+          renderDashboard();
+        });
+      });
+    }
+
+    if(!document.getElementById("disclaimerBlock")){
+      var wrap = document.querySelector(".wrap");
+      var d = document.createElement("div");
+      d.id = "disclaimerBlock";
+      d.className = "disclaimer";
+      d.textContent = "NierenKompass ersetzt keine ärztliche oder ernährungstherapeutische Beratung. Die Lebensmittel-Datenbank basiert auf \"Lebensmittel-Tabellen für Dialyse-Patienten\" (MEDICE Arzneimittel Pütter GmbH & Co. KG, Quelle: Souci/Fachmann/Kraut, \"Die Zusammensetzung der Lebensmittel\", medpharm 1994), Werte pro 100g essbarem Anteil. Foto-erkannte Werte sind KI-Schätzungen. Bespreche individuelle Grenzwerte immer mit deinem Nephrologie-Team.";
+      wrap.appendChild(d);
+    }
+  }
+
+  // ---------- Init ----------
+  loadStorage();
+  initSampleCapability();
+  if(profile){ renderDashboard(); } else { openOnboarding(false); }
+})();
+</script>
+</body>
+</html>
